@@ -1,0 +1,46 @@
+# Click "Send Request" above each block (Visual Studio, Rider, or VS Code + REST Client extension).
+@baseUrl = http://localhost:5058/api/products
+
+### READ all
+GET {{baseUrl}}
+
+### READ one
+GET {{baseUrl}}/1
+
+### CREATE
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "USB-C Hub",
+  "description": "7-in-1 adapter",
+  "price": 39.50,
+  "quantity": 15
+}
+
+### CREATE with invalid data (expect 400 with field errors)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "name": "A",
+  "price": 0,
+  "quantity": -1
+}
+
+### UPDATE (change the id to one that exists)
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "name": "Wireless Mouse v2",
+  "description": "Silent clicks",
+  "price": 27.99,
+  "quantity": 40
+}
+
+### DELETE (change the id to one that exists)
+DELETE {{baseUrl}}/3
+
+### Not found (expect 404)
+GET {{baseUrl}}/9999
