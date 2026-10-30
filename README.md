@@ -1,6 +1,10 @@
-# Product Manager: React + ASP.NET Core + SQL Server CRUD
+# Product Manager: ASP.NET Core + SQL Server CRUD, with React and Angular clients
 
 A small full-stack app for managing products (Create, Read, Update, Delete).
+
+There are two interchangeable frontends for the same API: `product-client/` (React, port 3000) and
+`product-client-angular/` (Angular, port 4200). See [Angular client](#angular-client) for the Angular one; the
+walkthrough below describes the React one.
 
 ```
 ┌──────────────────────┐   HTTP + JSON    ┌──────────────────────────┐   EF Core / SQL   ┌──────────────┐
@@ -58,6 +62,54 @@ dotnet run                     # API on http://localhost:5058
 cd crud-app\product-client
 npm install                    # first time only
 npm run dev                    # open http://localhost:3000
+
+# Or the Angular frontend instead (Node.js 22.22+, 24.15+ or 26+)
+cd crud-app\product-client-angular
+npm install                    # first time only
+npm start                      # open http://localhost:4200
+```
+
+## Angular client
+
+```
+product-client-angular/
+├── angular.json                        # Build config; loads Bootstrap's CSS
+└── src/
+    ├── environments/environment.ts     # apiUrl
+    └── app/
+        ├── app.ts / app.html           # State + wiring everything together
+        ├── app.config.ts               # Registers HttpClient
+        ├── models/product.ts           # Types matching the API's JSON
+        ├── services/
+        │   ├── product.service.ts      # HttpClient calls, one method per endpoint
+        │   └── api-errors.ts           # Error message + field error helpers
+        └── components/
+            ├── product-form/           # Create / Edit form with validation
+            ├── product-table/          # Read: list of products
+            └── confirm-delete-modal/
+```
+
+It behaves like the React client, using the Angular equivalents:
+
+| Concern      | Angular                                                                        |
+|--------------|--------------------------------------------------------------------------------|
+| State        | Signals in `App` (`products`, `editing`, `toDelete`, `alert`)                  |
+| HTTP         | `ProductService` wraps `HttpClient`; methods return `Observable`s              |
+| Form         | Reactive Forms; validators mirror `ProductRequest.cs`, and the server still validates |
+| Form reset   | An `effect()` refills the form when the `product` input changes                |
+| API 400s     | `App` passes field errors to `ProductForm.showServerErrors()`                  |
+| Parent/child | `input()` and `output()`                                                       |
+
+Two rules go further than the React client:
+- **Prices are limited to 2 decimal places**, because the column is `decimal(18,2)` and the API doesn't reject extra digits.
+- **Actions are disabled while a request is running**, so a slow list response can't overwrite a save that finished after it.
+
+The API URL is in `src/environments/environment.ts`. Change it there for a deployed API, and add the deployed
+site's origin to `WithOrigins(...)` in `Program.cs`.
+
+```powershell
+npm test            # unit tests (Vitest, HTTP mocked)
+npm run build       # production build in dist/
 ```
 
 ---
@@ -218,6 +270,6 @@ After a successful call we update local state instead of reloading the whole lis
 | Symptom | Cause / fix |
 |---|---|
 | "Cannot reach the server" banner | API not running, or `VITE_API_URL` port doesn't match `launchSettings.json` (5058). Restart `npm run dev` after editing `.env`. |
-| Browser console: *blocked by CORS policy* | The page origin isn't in `WithOrigins(...)` in `Program.cs`. It must be exactly `http://localhost:3000`. |
+| Browser console: *blocked by CORS policy* | The page origin isn't in `WithOrigins(...)` in `Program.cs`. It must be exactly `http://localhost:3000` (React) or `http://localhost:4200` (Angular). |
 | `dotnet ef database update` can't connect | Fix the `Server=` part of the connection string for your instance (`localhost\SQLEXPRESS`, `(localdb)\MSSQLLocalDB`). |
 | `Port 3000 is already in use` | Change `server.port` in `vite.config.js` **and** the CORS origin in `Program.cs`. |

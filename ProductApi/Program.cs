@@ -11,12 +11,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS: the React dev server runs on a different origin (port 3000),
-// so the browser blocks calls unless the API explicitly allows that origin.
-const string ReactPolicy = "ReactApp";
+// CORS: the dev servers run on different origins (React on 3000, Angular on 4200),
+// so the browser blocks calls unless the API explicitly allows those origins.
+const string FrontendPolicy = "Frontends";
 builder.Services.AddCors(options =>
-    options.AddPolicy(ReactPolicy, policy => policy
-        .WithOrigins("http://localhost:3000")
+    options.AddPolicy(FrontendPolicy, policy => policy
+        .WithOrigins("http://localhost:3000", "http://localhost:4200")
         .AllowAnyHeader()
         .AllowAnyMethod()));
 
@@ -38,7 +38,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
         statusCode: StatusCodes.Status500InternalServerError).ExecuteAsync(context);
 }));
 
-app.UseCors(ReactPolicy);
+app.UseCors(FrontendPolicy);
 app.UseAuthorization();
 app.MapControllers();
 
